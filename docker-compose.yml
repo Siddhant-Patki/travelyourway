@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  htc-hardhat:
+    build:
+      context: ./HTC-hardhat
+    container_name: htc-hardhat
+    ports:
+      - "8545:8545"
+    networks:
+      - bnb-network
+
+  bnb-admin:
+    build:
+      context: ./bnb-admin
+    container_name: bnb-admin
+    ports:
+      - "5174:5174"
+    networks:
+      - bnb-network
+
+  bnb-svelte:
+    build:
+      context: ./bnb-svelte-firebase-1
+    container_name: bnb-svelte
+    ports:
+      - "5173:5173"
+    depends_on:
+      - htc-hardhat
+    networks:
+      - bnb-network
+
+networks:
+  bnb-network:
+    driver: bridge
