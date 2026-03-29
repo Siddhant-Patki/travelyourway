@@ -1,0 +1,1 @@
+ganache --chain.chainId 1337 --port 8545 --wallet.mnemonic "monitor session cable enable movie stuff tomorrow siege shoot discover tobacco carbon"
