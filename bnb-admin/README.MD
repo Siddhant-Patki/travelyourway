@@ -1,48 +1,50 @@
-# bnb-admin
+# BnB Admin — React + Refine + Firebase
 
-<div align="center" style="margin: 30px;">
-    <a href="https://refine.dev">
-    <img alt="refine logo" src="https://refine.ams3.cdn.digitaloceanspaces.com/readme/refine-readme-banner.png">
-    </a>
-</div>
-<br/>
+Admin dashboard for the TravelYourWay platform. Manage listings and reservations through a full CRUD interface powered by Refine and Firebase.
 
-This [Refine](https://github.com/refinedev/refine) project was generated with [create refine-app](https://github.com/refinedev/refine/tree/master/packages/create-refine-app).
+## Tech Stack
 
-## Getting Started
+- **React** — UI library
+- **Refine** — admin framework for CRUD operations
+- **Ant Design** — UI component library
+- **Firebase** — Firestore as the data provider
+- **Vite** — build tool
 
-A React Framework for building internal tools, admin panels, dashboards & B2B apps with unmatched flexibility ✨
+## Prerequisites
 
-Refine's hooks and components simplifies the development process and eliminates the repetitive tasks by providing industry-standard solutions for crucial aspects of a project, including authentication, access control, routing, networking, state management, and i18n.
+- Node.js v18+
+- A Firebase project with Firestore enabled
+- Refine CLI: `npm install -g @refinedev/cli`
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Firebase
+
+Open `src/lib/firebase.ts` and replace the Firebase config values with your own project credentials from the [Firebase Console](https://console.firebase.google.com/).
+
+### 3. Run the development server
+
+```bash
+npm run dev
+```
+
+The admin panel will be available at `http://localhost:5173`.
 
 ## Available Scripts
 
-### Running the development server.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
 
-```bash
-    npm run dev
-```
+## Features
 
-### Building for production.
-
-```bash
-    npm run build
-```
-
-### Running the production server.
-
-```bash
-    npm run start
-```
-
-## Learn More
-
-To learn more about **Refine**, please check out the [Documentation](https://refine.dev/docs)
-
-- **REST Data Provider** [Docs](https://refine.dev/docs/core/providers/data-provider/#overview)
-- **Ant Design** [Docs](https://refine.dev/docs/ui-frameworks/antd/tutorial/)
-- **React Router** [Docs](https://refine.dev/docs/core/providers/router-provider/)
-
-## License
-
-MIT
+- **Listings** — create, view, edit, and delete BnB listings
+- **Reservations** — manage all guest reservations

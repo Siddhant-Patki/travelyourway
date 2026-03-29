@@ -1,38 +1,57 @@
-# create-svelte
+# BnB Frontend — SvelteKit + Firebase + Web3
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+The main user-facing application for the TravelYourWay platform. Users can browse listings, make reservations, and pay with HotelCoin (HTC) tokens.
 
-## Creating a project
+## Tech Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **SvelteKit** — full-stack Svelte framework
+- **Firebase** — Firestore database + Authentication
+- **Web3.js / Moralis** — wallet connection and token interaction
+- **TailwindCSS + shadcn-svelte** — UI components
+
+## Prerequisites
+
+- Node.js v18+
+- A Firebase project with Firestore and Authentication enabled
+- MetaMask installed in your browser
+- HTC-hardhat local node running (for Web3 features)
+
+## Setup
+
+### 1. Install dependencies
 
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+npm install
 ```
 
-## Developing
+### 2. Configure Firebase
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Open `src/lib/firebase.ts` and replace the Firebase config values with your own project credentials from the [Firebase Console](https://console.firebase.google.com/).
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+The app will be available at `http://localhost:5173`.
 
-To create a production version of your app:
+## Available Scripts
 
-```bash
-npm run build
-```
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run check` | Run Svelte type checker |
+| `npm run format` | Format code with Prettier |
 
-You can preview the production build with `npm run preview`.
+## Routes
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+| Route | Description |
+|-------|-------------|
+| `/` | Home — browse listings |
+| `/rooms/[id]` | Individual room detail page |
+| `/new-bnb` | Create a new listing |
+| `/reservations` | View your reservations |
+| `/profile` | User profile |
