@@ -44,18 +44,33 @@ export const userContext = derived(
 	})
 );
 
+// Refresh just the HTC balance from blockchain
+export async function refreshHtcBalance(contractAddress: string, abi: any) {
+	if (typeof window === 'undefined' || !window.ethereum) return;
+	try {
+		const Web3 = (await import('web3')).default;
+		const web3 = new Web3(window.ethereum);
+		const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+		if (accounts.length === 0) return;
+		const contract = new web3.eth.Contract(abi, contractAddress);
+		const htcBal = await contract.methods.balanceOf(accounts[0]).call() as string;
+		htcBalance.set(parseFloat(web3.utils.fromWei(htcBal, 'ether')).toFixed(2));
+	} catch (error) {
+		console.error('Failed to refresh HTC balance:', error);
+	}
+}
+
 // Call this after MetaMask connects to populate wallet + HTC balance
 export async function syncWalletData(contractAddress: string, abi: any) {
 	if (typeof window === 'undefined' || !window.ethereum) return;
 
 	try {
+		const Web3 = (await import('web3')).default;
+		const web3 = new Web3(window.ethereum);
 		const accounts = await window.ethereum.request({ method: 'eth_accounts' });
 		if (accounts.length === 0) return;
 
 		walletAddress.set(accounts[0]);
-
-		const web3 = window.web3;
-		if (!web3) return;
 
 		// Get ETH balance
 		const ethBal = await web3.eth.getBalance(accounts[0]);
@@ -63,7 +78,7 @@ export async function syncWalletData(contractAddress: string, abi: any) {
 
 		// Get HTC balance
 		const contract = new web3.eth.Contract(abi, contractAddress);
-		const htcBal = await contract.methods.balanceOf(accounts[0]).call();
+		const htcBal = await contract.methods.balanceOf(accounts[0]).call() as string;
 		htcBalance.set(parseFloat(web3.utils.fromWei(htcBal, 'ether')).toFixed(2));
 	} catch (error) {
 		console.error('Failed to sync wallet data:', error);

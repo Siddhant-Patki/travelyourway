@@ -5,11 +5,11 @@
 	import { auth } from '$lib/firebase';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '../ui/button/button.svelte';
-	import { open, setAuthModalClose } from '$lib/stores/authModalStore';
+	import { open, setAuthModalClose, checkMetamaskConnection } from '$lib/stores/authModalStore';
 	import abi from '../../../abi.json';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { syncWalletData } from '$lib/stores/userContext';
+	import { syncWalletData, refreshHtcBalance } from '$lib/stores/userContext';
 
 	// Contract address — update this after Hardhat deploy
 	const contractAddress = '0x09d1e4B23E723e4b968e58e33fDe50e7891f7E05';
@@ -25,13 +25,27 @@
 			if (existing.length > 0) {
 				accs.set(existing);
 				window.web3 = new Web3(window.ethereum);
+				// Restore wallet store state + HTC balance on reload
+				await syncWalletData(contractAddress, abi);
+				await checkMetamaskConnection();
 			}
+
+			// Refresh HTC balance whenever user switches back to this tab
+			// 1s delay to allow Ganache to mine the block before reading balance
+			document.addEventListener('visibilitychange', async () => {
+				if (document.visibilityState === 'visible') {
+					await new Promise(r => setTimeout(r, 1000));
+					await refreshHtcBalance(contractAddress, abi);
+				}
+			});
 
 			// Listen for account changes
 			window.ethereum.on('accountsChanged', async (accounts: string[]) => {
 				accs.set(accounts);
 				if (accounts.length > 0) {
 					window.web3 = new Web3(window.ethereum);
+					await syncWalletData(contractAddress, abi);
+					await checkMetamaskConnection();
 				} else {
 					window.web3 = null;
 				}
@@ -52,7 +66,7 @@
 			window.web3 = new Web3(window.ethereum);
 			accs.set(acc);
 			toast.success(`Wallet connected: ${acc[0].slice(0, 6)}...${acc[0].slice(-4)}`);
-			// await syncWalletData(contractAddress, abi);
+			await syncWalletData(contractAddress, abi);
 		} catch (error: any) {
 			toast.error('Failed to connect wallet', { description: error.message });
 			throw error;

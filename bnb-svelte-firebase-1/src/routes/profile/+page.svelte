@@ -12,6 +12,7 @@
 	import { cn } from '$lib/utils';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { htcBalance } from '$lib/stores/userContext';
 
 	let selectedRes: Reservation | null = null;
 
@@ -31,9 +32,7 @@
 		return date.toLocaleDateString('en-US', { dateStyle: 'medium' });
 	}
 
-	$: earnedTokens = $resColl.reduce((acc, r) => acc + (r.rewardTokens ?? 0), 0);
-	$: spentTokens = $resColl.reduce((acc, r) => acc + (r.tokensSpent ?? 0), 0);
-	$: availableTokens = Math.max(0, earnedTokens - spentTokens);
+	$: availableTokens = $htcBalance;
 
 	$: activeTab = $page.url.searchParams.get('tab') ?? 'overview';
 </script>
@@ -100,10 +99,7 @@
 						<span class="text-sm">HTC Tokens</span>
 					</div>
 					<p class="text-2xl font-bold">{availableTokens} HTC</p>
-					<p class="text-xs text-green-600">+{earnedTokens} earned</p>
-					{#if spentTokens > 0}
-						<p class="text-xs text-orange-500">−{spentTokens} spent</p>
-					{/if}
+					<p class="text-xs text-muted-foreground">Live balance from wallet</p>
 					<Button variant="outline" size="sm" class="mt-1 w-full" on:click={() => goto('/')}>Redeem</Button>
 				</div>
 				<div class="flex flex-col gap-1 rounded-lg border p-4">

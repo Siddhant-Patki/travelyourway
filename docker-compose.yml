@@ -16,6 +16,9 @@ services:
     container_name: bnb-admin
     ports:
       - "5174:5174"
+    volumes:
+      - ./bnb-admin:/app
+      - /app/node_modules
     networks:
       - bnb-network
 
@@ -25,6 +28,9 @@ services:
     container_name: bnb-svelte
     ports:
       - "5173:5173"
+    volumes:
+      - ./bnb-svelte-firebase-1:/app
+      - /app/node_modules
     depends_on:
       - htc-hardhat
     networks:

@@ -13,15 +13,29 @@
 	const currentUser = userStore(auth);
 
 	const resRef = collection(firestore, 'reservations');
-	const q = query(resRef, where('userId', '==', $currentUser?.uid));
-	const resColl = collectionStore<Reservation>(firestore, q as any);
+	$: q = $currentUser?.uid ? query(resRef, where('userId', '==', $currentUser.uid)) : null;
+	$: resColl = q ? collectionStore<Reservation>(firestore, q as any) : null;
 
 	let selectedRes: Reservation | null = null;
+	let sortOrder: 'asc' | 'desc' = 'desc';
+
+	function toMs(val: any): number {
+		return val?.toDate ? val.toDate().getTime() : new Date(val).getTime();
+	}
+
+	$: sortedRes = [...(($resColl as unknown as Reservation[]) ?? [])].sort((a, b) =>
+		sortOrder === 'desc' ? toMs(b.checkIn) - toMs(a.checkIn) : toMs(a.checkIn) - toMs(b.checkIn)
+	);
 
 	function formatDate(value: any): string {
 		if (!value) return '—';
 		const date = value?.toDate ? value.toDate() : new Date(value);
 		return date.toLocaleDateString('en-US', { dateStyle: 'medium' });
+	}
+
+	function isExpired(checkOut: any): boolean {
+		const date = checkOut?.toDate ? checkOut.toDate() : new Date(checkOut);
+		return date < new Date();
 	}
 
 	function truncateHash(hash: string): string {
@@ -36,9 +50,16 @@
 
 <div class="container mx-auto flex flex-col gap-4 py-8">
 	<SignedIn>
-		<h4 class="scroll-m-20 text-xl font-semibold tracking-tight">Your reservations</h4>
+		<div class="flex items-center justify-between">
+			<h4 class="scroll-m-20 text-xl font-semibold tracking-tight">Your reservations</h4>
+			{#if sortedRes.length > 1}
+				<Button variant="outline" class="gap-2 text-sm" on:click={() => sortOrder = sortOrder === 'desc' ? 'asc' : 'desc'}>
+					{sortOrder === 'desc' ? '↓ Newest first' : '↑ Oldest first'}
+				</Button>
+			{/if}
+		</div>
 
-		{#if $resColl.length === 0}
+		{#if sortedRes.length === 0}
 			<div class="flex flex-col items-center justify-center gap-2 py-24 text-center">
 				<span class="text-4xl">🏨</span>
 				<p class="text-lg font-semibold">No reservations yet</p>
@@ -46,26 +67,31 @@
 				<a href="/" class={buttonVariants({ variant: 'outline' })}>Browse listings</a>
 			</div>
 		{:else}
-			{#each $resColl as res}
-				<div class="flex flex-col gap-2 rounded-md border p-4">
+			{#each sortedRes as res}
+				<div class="flex flex-col gap-2 rounded-md border p-4 {isExpired(res.checkOut) ? 'opacity-30' : ''}">
 					<div class="flex justify-between items-center">
-						<p class="font-semibold">Booked on {formatDate(res.checkIn)}</p>
+						<p class="font-semibold {isExpired(res.checkOut) ? 'text-muted-foreground' : ''}">{formatDate(res.checkIn)} → {formatDate(res.checkOut)}</p>
 						<span class="text-sm text-muted-foreground">{res.guestCount} {res.guestCount === 1 ? 'guest' : 'guests'}</span>
 					</div>
-					<span class="text-sm text-muted-foreground">
-						{formatDate(res.checkIn)} → {formatDate(res.checkOut)}
-					</span>
 					<div class="flex justify-between items-center">
-						<span class="font-semibold">₹{res.totalPrice}</span>
-						<Button variant="link" class="p-0 h-auto" on:click={() => (selectedRes = res)}>
-							View more →
-						</Button>
+						<span class="font-semibold {isExpired(res.checkOut) ? 'text-muted-foreground' : ''}">₹{res.totalPrice}</span>
+						{#if res.bookingCode}
+							<span class="font-mono text-xs tracking-widest bg-muted px-2 py-1 rounded"># {res.bookingCode}</span>
+						{/if}
 					</div>
 					{#if res.paymentMethod === 'card' && res.rewardTokens}
 						<p class="text-xs text-green-600">🎁 +{res.rewardTokens} HTC earned</p>
 					{:else if res.paymentMethod === 'tokens'}
 						<p class="text-xs text-orange-500">🔥 Paid with HTC tokens</p>
 					{/if}
+					<div class="flex justify-between items-center">
+						<Button variant="link" class="p-0 h-auto text-sm" on:click={() => (selectedRes = res)}>
+							View more →
+						</Button>
+						{#if isExpired(res.checkOut)}
+							<span class="text-xs text-muted-foreground">Expired</span>
+						{/if}
+					</div>
 				</div>
 			{/each}
 		{/if}
@@ -80,6 +106,14 @@
 
 				{#if selectedRes}
 					<div class="flex flex-col gap-3 text-sm">
+
+						<!-- Booking Code -->
+						{#if selectedRes.bookingCode}
+							<div class="flex items-center justify-between rounded-md bg-muted px-3 py-2">
+								<span class="text-xs text-muted-foreground uppercase tracking-wide">Booking Code</span>
+								<span class="font-mono font-bold tracking-widest">{selectedRes.bookingCode}</span>
+							</div>
+						{/if}
 
 						<!-- Stay -->
 						<div class="flex items-center gap-3 rounded-md border p-3">

@@ -22,6 +22,8 @@ import { ColorModeContextProvider } from "./contexts/color-mode";
 import { firebaseAuth, firestoreDatabase } from "./lib/firebase";
 import { ListingList, ListingCreate, ListingEdit, ListingShow } from "./pages/listing";
 import { ReservationList, ReservationCreate, ReservationEdit, ReservationShow } from "./pages/reservations";
+import { DiningList, DiningCreate, DiningEdit, DiningShow } from "./pages/dining";
+import { DiningReservationList, DiningReservationCreate, DiningReservationEdit, DiningReservationShow } from "./pages/dining-reservations";
 
 function App() {
   return (
@@ -56,6 +58,28 @@ function App() {
                     meta: {
                       canDelete: true,
                       label: "Reservations",
+                    },
+                  },
+                  {
+                    name: "dining",
+                    list: "/dining",
+                    create: "/dining/create",
+                    edit: "/dining/edit/:id",
+                    show: "/dining/show/:id",
+                    meta: {
+                      canDelete: true,
+                      label: "Dining",
+                    },
+                  },
+                  {
+                    name: "dining_reservations",
+                    list: "/dining-reservations",
+                    create: "/dining-reservations/create",
+                    edit: "/dining-reservations/edit/:id",
+                    show: "/dining-reservations/show/:id",
+                    meta: {
+                      canDelete: true,
+                      label: "Dining Reservations",
                     },
                   },
                 ]}
@@ -93,6 +117,22 @@ function App() {
                       <Route path="create" element={<ReservationCreate />} />
                       <Route path="edit/:id" element={<ReservationEdit />} />
                       <Route path="show/:id" element={<ReservationShow />} />
+                    </Route>
+
+                    {/* Dining - Custom Pages */}
+                    <Route path="/dining">
+                      <Route index element={<DiningList />} />
+                      <Route path="create" element={<DiningCreate />} />
+                      <Route path="edit/:id" element={<DiningEdit />} />
+                      <Route path="show/:id" element={<DiningShow />} />
+                    </Route>
+
+                    {/* Dining Reservations - Custom Pages */}
+                    <Route path="/dining-reservations">
+                      <Route index element={<DiningReservationList />} />
+                      <Route path="create" element={<DiningReservationCreate />} />
+                      <Route path="edit/:id" element={<DiningReservationEdit />} />
+                      <Route path="show/:id" element={<DiningReservationShow />} />
                     </Route>
 
                     <Route path="*" element={<ErrorComponent />} />

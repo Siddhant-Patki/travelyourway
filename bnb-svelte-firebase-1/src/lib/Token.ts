@@ -44,23 +44,23 @@ export async function mintToken(toAddress: string, amount: number): Promise<stri
 }
 
 
-// Spend HTC tokens from a user's wallet (transfer to treasury for payment)
+// Burn HTC tokens from a user's wallet (owner calls burn on their behalf)
 export async function burnToken(fromAddress: string, amount: number): Promise<string | null> {
 	try {
 		const web3 = new Web3(window.ethereum);
 		const contract = getContract();
 		const amountInWei = web3.utils.toWei(amount.toString(), 'ether');
 
-		console.log(`Spending ${amount} HTC from ${fromAddress}`);
+		console.log(`Burning ${amount} HTC from ${fromAddress}`);
 
 		const receipt = await contract.methods
-			.transfer(DEPLOYER_ADDRESS, amountInWei)
-			.send({ from: fromAddress });
+			.burn(fromAddress, amountInWei)
+			.send({ from: DEPLOYER_ADDRESS });
 
-		console.log('Spend tx hash:', receipt.transactionHash);
+		console.log('Burn tx hash:', receipt.transactionHash);
 		return receipt.transactionHash;
 	} catch (error: any) {
-		console.error('Token spend failed:', error.message);
+		console.error('Token burn failed:', error.message);
 		return null;
 	}
 }

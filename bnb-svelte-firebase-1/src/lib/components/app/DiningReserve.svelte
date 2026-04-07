@@ -1,94 +1,51 @@
 <script lang="ts">
-	import { getLocalTimeZone, DateFormatter } from '@internationalized/date';
 	import { page } from '$app/stores';
-	import { SignedIn, SignedOut, userStore } from 'sveltefire';
-	import { doc, setDoc, updateDoc, increment } from 'firebase/firestore';
+	import { userStore } from 'sveltefire';
+	import { doc, setDoc } from 'firebase/firestore';
 	import { MinusIcon, PlusIcon } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import * as Card from '$lib/components/ui/card/index';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import type { Listing } from '$lib/types';
-	import RangeSelector from './RangeSelector.svelte';
-	import Label from '../ui/label/label.svelte';
-	import { duration } from '$lib/stores/stayStore';
+	import type { DiningListing } from '$lib/types';
 	import { firestore, auth } from '$lib/firebase';
 	import { setAuthModalOpen, connectionStatus } from '$lib/stores/authModalStore';
+	import DateSelector from './DateSelector.svelte';
+	import { getLocalTimeZone, type DateValue } from '@internationalized/date';
+	import { DateFormatter } from '@internationalized/date';
 	import { mintToken, burnToken, calculateReward, CONTRACT_ADDRESS } from '$lib/Token';
 	import { walletAddress, refreshHtcBalance } from '$lib/stores/userContext';
 	import abi from '../../../abi.json';
 
-	export let listing: Listing;
+	export let dining: DiningListing;
 
-	let guest = 1;
-	const oneDay = 24 * 60 * 60 * 1000;
-	let diffDays: number = 1;
 	const user = userStore(auth);
-	let totalPrice = listing?.price ?? 0;
+	const df = new DateFormatter('en-US', { dateStyle: 'medium' });
+
+	let guests = 1;
+	let selectedDate: DateValue | undefined = undefined;
 	let confirmOpen = false;
-	let txHash: string | null = null;
-	let burnTxHash: string | null = null;
-	let isMinting = false;
 	let paymentMethod: 'card' | 'tokens' = 'card';
 	let cardName = '';
 	let cardNumber = '';
 	let cardExpiry = '';
 	let cardCvv = '';
+	let isMinting = false;
+	let txHash: string | null = null;
+	let burnTxHash: string | null = null;
 
-	const df = new DateFormatter('en-US', { dateStyle: 'medium' });
-
-	function calcDateDiff() {
-		if (!$duration.start || !$duration.end || !listing?.price) return;
-
-		const start = $duration.start.toDate(getLocalTimeZone());
-		const end = $duration.end.toDate(getLocalTimeZone());
-
-		start.setHours(0, 0, 0, 0);
-		end.setHours(0, 0, 0, 0);
-
-		diffDays = Math.round((end.getTime() - start.getTime()) / oneDay);
-		if (diffDays < 1) diffDays = 1;
-
-		totalPrice = diffDays * listing.price * guest;
-	}
+	$: totalPrice = guests * dining.pricePerPerson;
+	$: rewardTokens = calculateReward(totalPrice);
 
 	function generateBookingCode(): string {
 		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 		return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 	}
 
-	async function fbRev() {
-		await setDoc(doc(firestore, 'reservations', crypto.randomUUID()), {
-			userId: $user?.uid,
-			listingId: $page.params.id,
-			checkIn: $duration.start?.toDate(getLocalTimeZone()),
-			checkOut: $duration.end?.toDate(getLocalTimeZone()),
-			totalPrice,
-			reservedAt: new Date(),
-			guestCount: guest,
-			paymentMethod,
-			rewardTokens: paymentMethod === 'card' ? rewardTokens : 0,
-			tokensSpent: paymentMethod === 'tokens' ? rewardTokens : 0,
-			txHash: txHash ?? null,
-			burnTxHash: burnTxHash ?? null,
-			bookingCode: generateBookingCode()
-		});
-
-		// Atomically decrement available rooms on the listing
-		if (listing.totalAvailableRooms && listing.totalAvailableRooms > 0) {
-			await updateDoc(doc(firestore, 'listing', $page.params.id), {
-				totalAvailableRooms: increment(-1)
-			});
-		}
-	}
-
 	async function confirmBooking() {
 		confirmOpen = false;
-		calcDateDiff();
-		totalPrice = diffDays * listing.price * guest;
 
 		if (paymentMethod === 'tokens') {
-			// Guard: wallet must be connected to pay with tokens
 			if (!$walletAddress) {
 				toast.error('Connect your wallet to pay with tokens');
 				confirmOpen = true;
@@ -106,7 +63,6 @@
 				}
 				toast.success(`Paid ${tokenCost} HTC tokens successfully!`);
 				await refreshHtcBalance(CONTRACT_ADDRESS, abi);
-				console.log(CONTRACT_ADDRESS, "i am here")
 			} catch (err: any) {
 				toast.dismiss();
 				toast.error('Token payment failed', { description: err.message });
@@ -115,7 +71,6 @@
 				isMinting = false;
 			}
 		} else if (paymentMethod === 'card' && $walletAddress) {
-			// Pay with card: mint reward tokens as cashback (optional — non-blocking)
 			try {
 				isMinting = true;
 				const reward = calculateReward(totalPrice);
@@ -134,65 +89,52 @@
 			}
 		}
 
-		// Save reservation to Firestore
-		toast.promise(fbRev(), {
-			loading: 'Booking a reservation...',
-			success: 'Reservation booked successfully',
-			error(error: any) {
-				return `Failed to book a reservation. ${error.message}`;
+		toast.promise(
+			setDoc(doc(firestore, 'dining_reservations', crypto.randomUUID()), {
+				diningId: $page.params.id,
+				userId: $user?.uid,
+				date: selectedDate!.toDate(getLocalTimeZone()),
+				guestCount: guests,
+				totalPrice,
+				paymentMethod,
+				rewardTokens: paymentMethod === 'card' ? rewardTokens : 0,
+				tokensSpent: paymentMethod === 'tokens' ? rewardTokens : 0,
+				txHash: txHash ?? null,
+				burnTxHash: burnTxHash ?? null,
+				bookingCode: generateBookingCode(),
+				reservedAt: new Date()
+			}),
+			{
+				loading: 'Booking your table...',
+				success: 'Table booked successfully!',
+				error: (e: any) => `Booking failed: ${e.message}`
 			}
-		});
+		);
 	}
-
-	function openConfirmModal() {
-		calcDateDiff();
-		confirmOpen = true;
-	}
-
-	$: $duration, guest, calcDateDiff();
-
-	// Reward preview
-	$: rewardTokens = calculateReward(totalPrice);
 </script>
 
 <!-- Confirmation Modal -->
 <Dialog.Root bind:open={confirmOpen}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Confirm your reservation</Dialog.Title>
-			<Dialog.Description> review your booking details before confirming</Dialog.Description>
+			<Dialog.Title>Confirm your table</Dialog.Title>
+			<Dialog.Description>Review your dining reservation before confirming</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="flex flex-col gap-3 py-2">
 			<div class="rounded-md border p-4 flex flex-col gap-2">
-				<p class="font-semibold text-base">{listing.title}</p>
-				<p class="text-sm text-muted-foreground">{listing.location}</p>
+				<p class="font-semibold text-base">{dining.title}</p>
+				<p class="text-sm text-muted-foreground">{dining.location} · {dining.cuisine} cuisine</p>
 			</div>
 
 			<div class="flex flex-col gap-2 text-sm">
 				<div class="flex justify-between">
-					<span class="text-muted-foreground">Check in</span>
-					<span class="font-medium">
-						{#if $duration.start}
-							{df.format($duration.start.toDate(getLocalTimeZone()))}
-						{/if}
-					</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-muted-foreground">Check out</span>
-					<span class="font-medium">
-						{#if $duration.end}
-							{df.format($duration.end.toDate(getLocalTimeZone()))}
-						{/if}
-					</span>
+					<span class="text-muted-foreground">Date</span>
+					<span class="font-medium">{selectedDate ? df.format(selectedDate.toDate(getLocalTimeZone())) : '—'}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-muted-foreground">Guests</span>
-					<span class="font-medium">{guest} {guest === 1 ? 'guest' : 'guests'}</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-muted-foreground">Duration</span>
-					<span class="font-medium">{diffDays} {diffDays === 1 ? 'night' : 'nights'}</span>
+					<span class="font-medium">{guests} {guests === 1 ? 'guest' : 'guests'}</span>
 				</div>
 				<div class="flex justify-between border-t pt-2 font-semibold text-base">
 					<span>Total</span>
@@ -223,7 +165,6 @@
 				{/if}
 			</div>
 
-			<!-- Dummy Card Form -->
 			{#if paymentMethod === 'card'}
 				<div class="flex flex-col gap-2">
 					<input bind:value={cardName} placeholder="Name on card" class="w-full rounded-md border px-3 py-2 text-sm" />
@@ -235,7 +176,6 @@
 				</div>
 			{/if}
 
-			<!-- Token Payment Info -->
 			{#if paymentMethod === 'tokens' && $walletAddress}
 				<div class="flex flex-col gap-1 rounded-md bg-muted p-3 text-sm">
 					<div class="flex justify-between">
@@ -263,72 +203,54 @@
 </Dialog.Root>
 
 <!-- Reserve Card -->
-<Card.Root class="sticky left-0 right-0 top-0 h-fit">
+<Card.Root class="sticky top-4 h-fit">
 	<Card.Header>
-		<Card.Title>₹{listing?.price} <span class="text-sm font-normal text-muted-foreground">/ night</span></Card.Title>
-		<Card.Description>Get yourself a reservation</Card.Description>
+		<Card.Title>₹{dining.pricePerPerson} <span class="text-sm font-normal text-muted-foreground">/ person</span></Card.Title>
+		<Card.Description>Book a table</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		<div class="flex w-full flex-col gap-4">
-			<div>
-				<Label>Add guests</Label>
-				<div class="flex w-full items-center justify-evenly mt-2">
-					<Button
-						disabled={guest <= 1}
-						variant="outline"
-						class="rounded-full"
-						size="icon"
-						on:click={() => { guest--; }}
-					>
-						<MinusIcon class="h-6 w-6" />
+		<div class="flex flex-col gap-4">
+			<!-- Date -->
+			<div class="flex flex-col gap-1">
+				<span class="text-sm font-semibold">Date</span>
+				<DateSelector bind:value={selectedDate} />
+			</div>
+
+			<!-- Guests -->
+			<div class="flex flex-col gap-1">
+				<span class="text-sm font-semibold">Guests</span>
+				<div class="flex w-full items-center justify-evenly mt-1">
+					<Button disabled={guests <= 1} variant="outline" class="rounded-full" size="icon" on:click={() => guests--}>
+						<MinusIcon class="h-5 w-5" />
 					</Button>
-					<span class="text-2xl">{guest}</span>
-					<Button
-						disabled={guest >= listing.guestCount}
-						variant="outline"
-						class="rounded-full"
-						size="icon"
-						on:click={() => { guest++; }}
-					>
-						<PlusIcon class="h-6 w-6" />
+					<span class="text-2xl">{guests}</span>
+					<Button disabled={guests >= dining.maxGuests} variant="outline" class="rounded-full" size="icon" on:click={() => guests++}>
+						<PlusIcon class="h-5 w-5" />
 					</Button>
 				</div>
-				<p class="text-xs text-muted-foreground text-center mt-1">Max {listing.guestCount} guests</p>
-			</div>
-			<div class="space-y-2">
-				<Label>Select stay</Label>
-				<RangeSelector {listing} />
-				{#if listing.availableFrom && listing.availableTo}
-					<p class="text-xs text-muted-foreground">
-						Available {listing.availableFrom} → {listing.availableTo}
-					</p>
-				{/if}
-				{#if listing.totalAvailableRooms !== undefined}
-					<p class="text-xs {listing.totalAvailableRooms <= 3 ? 'text-orange-500' : 'text-muted-foreground'}">
-						{listing.totalAvailableRooms} room{listing.totalAvailableRooms === 1 ? '' : 's'} remaining
-					</p>
-				{/if}
+				<p class="text-xs text-muted-foreground text-center mt-1">Max {dining.maxGuests} guests</p>
 			</div>
 		</div>
 	</Card.Content>
 	<Card.Footer class="flex flex-col gap-4">
 		{#if $connectionStatus === 'firebase' || $connectionStatus === 'both' || $connectionStatus === 'metamask'}
-			{#if listing.totalAvailableRooms !== undefined && listing.totalAvailableRooms <= 0}
-				<Button disabled class="w-full" size="lg">No rooms available</Button>
-			{:else}
-				<Button on:click={openConfirmModal} class="w-full" size="lg">Reserve</Button>
-			{/if}
+			<Button
+				on:click={() => { if (selectedDate) confirmOpen = true; else toast.error('Please select a date'); }}
+				class="w-full"
+				size="lg"
+				disabled={isMinting}
+			>
+				Reserve
+			</Button>
 		{:else}
-			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">Sign in to reserve</Button>
+			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">
+				Sign in to reserve
+			</Button>
 		{/if}
 		<div class="flex w-full flex-col gap-2 border-t pt-4">
 			<div class="flex justify-between text-sm">
-				<span class="text-muted-foreground">₹{listing.price} × {diffDays} {diffDays === 1 ? 'night' : 'nights'} × {guest} {guest === 1 ? 'guest' : 'guests'}</span>
+				<span class="text-muted-foreground">₹{dining.pricePerPerson} × {guests} {guests === 1 ? 'guest' : 'guests'}</span>
 				<span>₹{totalPrice}</span>
-			</div>
-			<div class="flex justify-between text-sm">
-				<span class="text-muted-foreground">Guests</span>
-				<span>{guest} {guest === 1 ? 'guest' : 'guests'}</span>
 			</div>
 			{#if $walletAddress}
 				<div class="flex justify-between text-sm text-green-600">
