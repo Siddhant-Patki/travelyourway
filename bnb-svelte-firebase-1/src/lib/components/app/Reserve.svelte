@@ -312,12 +312,14 @@
 		</div>
 	</Card.Content>
 	<Card.Footer class="flex flex-col gap-4">
-		{#if $connectionStatus === 'firebase' || $connectionStatus === 'both' || $connectionStatus === 'metamask'}
+		{#if $connectionStatus === 'both'}
 			{#if listing.totalAvailableRooms !== undefined && listing.totalAvailableRooms <= 0}
 				<Button disabled class="w-full" size="lg">No rooms available</Button>
 			{:else}
 				<Button on:click={openConfirmModal} class="w-full" size="lg">Reserve</Button>
 			{/if}
+		{:else if $connectionStatus === 'firebase'}
+			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">Connect wallet to reserve</Button>
 		{:else}
 			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">Sign in to reserve</Button>
 		{/if}

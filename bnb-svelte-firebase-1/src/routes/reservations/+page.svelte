@@ -169,7 +169,7 @@
 												<button on:click={() => copyHash(selectedRes?.txHash ?? '')} class="text-muted-foreground hover:text-foreground">
 													<CopyIcon class="h-3 w-3" />
 												</button>
-												<a href={`https://etherscan.io/tx/${selectedRes.txHash}`} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
+												<a href={`http://localhost:5100/tx/${selectedRes.txHash}`} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
 													<ExternalLinkIcon class="h-3 w-3" />
 												</a>
 											</div>
@@ -186,7 +186,7 @@
 												<button on:click={() => copyHash(selectedRes?.burnTxHash ?? '')} class="text-muted-foreground hover:text-foreground">
 													<CopyIcon class="h-3 w-3" />
 												</button>
-												<a href={`https://etherscan.io/tx/${selectedRes.burnTxHash}`} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
+												<a href={`http://localhost:5100/tx/${selectedRes.burnTxHash}`} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
 													<ExternalLinkIcon class="h-3 w-3" />
 												</a>
 											</div>
@@ -195,7 +195,7 @@
 								{/if}
 
 								<a
-									href={`https://etherscan.io/tx/${selectedRes.burnTxHash ?? selectedRes.txHash}`}
+									href={`http://localhost:5100/tx/${selectedRes.burnTxHash ?? selectedRes.txHash}`}
 									target="_blank"
 									rel="noopener noreferrer"
 									class={buttonVariants({ variant: 'outline', className: 'w-full mt-1 gap-2' })}

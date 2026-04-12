@@ -39,6 +39,10 @@ export interface DiningReservation {
 	guestCount: number;
 	totalPrice: number;
 	paymentMethod?: 'card' | 'tokens';
+	rewardTokens?: number;
+	tokensSpent?: number;
+	txHash?: string;
+	burnTxHash?: string;
 	bookingCode?: string;
 	reservedAt?: Date;
 }

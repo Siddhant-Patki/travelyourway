@@ -265,7 +265,7 @@ const listings = [
     description: "Charming 17th-century canal house on the Keizersgracht. Original wooden beams, antique furnishings, and bikes provided for exploring the city.",
     category: "hotel",
     location: "Keizersgracht, Amsterdam, Netherlands",
-    imgSrc: "https://images.unsplash.com/photo-1534351590666-13e3e96b5702?w=800",
+    imgSrc: "https://images.unsplash.com/photo-1659017543541-e94ccb7748d2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YW1zdGVyZGFtJTIwaG90ZWx8ZW58MHx8MHx8fDA%3D",
     price: 10800,
     guestCount: 4,
     roomCount: 2,

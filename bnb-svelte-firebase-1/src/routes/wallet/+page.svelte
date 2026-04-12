@@ -4,7 +4,7 @@
 	import { collection, query, where, orderBy } from 'firebase/firestore';
 	import { auth, firestore } from '$lib/firebase';
 	import { walletAddress, htcBalance, refreshHtcBalance } from '$lib/stores/userContext';
-	import { CONTRACT_ADDRESS, DEPLOYER_ADDRESS } from '$lib/Token';
+	import { CONTRACT_ADDRESS, DEPLOYER_ADDRESS, EXPLORER_URL } from '$lib/Token';
 	import { setAuthModalOpen } from '$lib/stores/authModalStore';
 	import { toast } from 'svelte-sonner';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -134,9 +134,14 @@
 						<span class="text-xs text-muted-foreground">HTC Token Contract</span>
 						<span class="font-mono truncate">{CONTRACT_ADDRESS}</span>
 					</div>
-					<button on:click={() => copy(CONTRACT_ADDRESS, 'Contract address copied')} class="shrink-0 text-muted-foreground hover:text-foreground">
-						<CopyIcon class="h-4 w-4" />
-					</button>
+					<div class="flex items-center gap-2 shrink-0">
+						<button on:click={() => copy(CONTRACT_ADDRESS, 'Contract address copied')} class="text-muted-foreground hover:text-foreground">
+							<CopyIcon class="h-4 w-4" />
+						</button>
+						<a href="{EXPLORER_URL}/address/{CONTRACT_ADDRESS}" target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
+							<ExternalLinkIcon class="h-4 w-4" />
+						</a>
+					</div>
 				</div>
 				<div class="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
 					<div class="flex flex-col min-w-0">
@@ -195,10 +200,15 @@
 								{tx.type === 'mint' ? '+' : '−'}{tx.amount} HTC
 							</span>
 
-							<!-- Copy hash -->
-							<button on:click={() => copy(tx.hash, 'Tx hash copied')} class="shrink-0 text-muted-foreground hover:text-foreground">
-								<CopyIcon class="h-3.5 w-3.5" />
-							</button>
+							<!-- Copy + explorer link -->
+							<div class="flex items-center gap-1 shrink-0">
+								<button on:click={() => copy(tx.hash, 'Tx hash copied')} class="text-muted-foreground hover:text-foreground">
+									<CopyIcon class="h-3.5 w-3.5" />
+								</button>
+								<a href="{EXPLORER_URL}/tx/{tx.hash}" target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">
+									<ExternalLinkIcon class="h-3.5 w-3.5" />
+								</a>
+							</div>
 						</div>
 					{/each}
 				</div>

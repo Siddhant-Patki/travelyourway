@@ -11,10 +11,22 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { walletAddress, htcBalance } from '$lib/stores/userContext';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	const currentUser = userStore(auth);
 
 	let isDark = false;
+	let displayedBalance = '0';
+	let balanceTimeout: ReturnType<typeof setTimeout>;
+
+	// 2s delay before updating displayed balance to avoid flicker
+	$: {
+		clearTimeout(balanceTimeout);
+		const val = $htcBalance;
+		balanceTimeout = setTimeout(() => { displayedBalance = val; }, 2000);
+	}
+
+	$: activeTab = $page.url.pathname.startsWith('/dining') ? 'Dining' : 'Stays';
 
 	if (typeof window !== 'undefined') {
 		isDark = localStorage.getItem('theme') === 'dark' ||
@@ -55,7 +67,6 @@
 	let searchLocation = '';
 	let searchDate = '';
 	let searchGuests = '';
-	let activeTab = 'Stays';
 
 	function handleSearch() {
 		const params = new URLSearchParams();
@@ -87,7 +98,6 @@
 			{#each [{ label: 'Stays', icon: '🏠', href: '/' }, { label: 'Dining', icon: '🍽️', href: '/dining' }] as tab}
 				<a
 					href={tab.href}
-					on:click={() => activeTab = tab.label}
 					class="flex flex-col items-center gap-0.5 px-4 py-1.5 text-sm font-medium border-b-2 transition-colors
 						{activeTab === tab.label ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'}"
 				>
@@ -114,7 +124,7 @@
 					class="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-muted"
 				>
 					<WalletIcon class="h-3.5 w-3.5 text-amber-500" />
-					{$htcBalance} HTC
+					{displayedBalance} HTC
 				</button>
 			{:else}
 				<Button on:click={setAuthModalOpen} variant="outline" size="sm" class="rounded-full gap-1.5 text-xs">

@@ -233,7 +233,7 @@
 		</div>
 	</Card.Content>
 	<Card.Footer class="flex flex-col gap-4">
-		{#if $connectionStatus === 'firebase' || $connectionStatus === 'both' || $connectionStatus === 'metamask'}
+		{#if $connectionStatus === 'both'}
 			<Button
 				on:click={() => { if (selectedDate) confirmOpen = true; else toast.error('Please select a date'); }}
 				class="w-full"
@@ -241,6 +241,10 @@
 				disabled={isMinting}
 			>
 				Reserve
+			</Button>
+		{:else if $connectionStatus === 'firebase'}
+			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">
+				Connect wallet to reserve
 			</Button>
 		{:else}
 			<Button on:click={() => setAuthModalOpen()} class="w-full" variant="outline" size="lg">

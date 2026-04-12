@@ -23,7 +23,12 @@ const config: HardhatUserConfig = {
       accounts: [
         "0x81a57c28d560293b92bec187dcb23ee4f07bb0e2034473bc77d5030920a7a1e3"
       ]
-    }
+    },
+    // mainnet: {
+    //   url: "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY",
+    //   accounts: ["YOUR_PRIVATE_KEY"]
+    // }
+    // npx hardhat run scripts/deploy.ts --network mainnet
   }
 };
 
